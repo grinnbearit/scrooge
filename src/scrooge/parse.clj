@@ -1,7 +1,8 @@
 (ns scrooge.parse
   (:require [clojure.xml :refer [parse]]
             [clojure.zip :refer [xml-zip]]
-            [clojure.data.zip.xml :refer [xml-> xml1-> text]]))
+            [clojure.data.zip.xml :refer [xml-> xml1-> text]]
+            [clojure.string :as str]))
 
 
 (defn extract-posting
@@ -40,3 +41,13 @@
   (->> (parse input)
        (xml-zip)
        (extract-ledger)))
+
+
+(defn parse-prices
+  [input]
+  (for [line (line-seq input)
+        :let [[_ date-str _ commodity unit price] (str/split line #" ")]]
+    {:date date-str
+     :commodity commodity
+     :unit unit
+     :price (Double/parseDouble price)}))
