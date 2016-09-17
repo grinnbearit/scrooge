@@ -2,7 +2,16 @@
   (:require [clojure.xml :refer [parse]]
             [clojure.zip :refer [xml-zip]]
             [clojure.data.zip.xml :refer [xml-> xml1-> text]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clj-time.core :as t]))
+
+
+(defn parse-date
+  [date-str]
+  (let [[year month day] (str/split date-str #"/")]
+    (t/local-date (Integer/parseInt year)
+                  (Integer/parseInt month)
+                  (Integer/parseInt day))))
 
 
 (defn extract-posting
@@ -24,7 +33,7 @@
         payee (xml1-> node :payee text)
         postings (mapv extract-posting
                        (xml-> node :postings :posting))]
-    {:date date-str
+    {:date (parse-date date-str)
      :note note
      :payee payee
      :postings postings}))
@@ -47,7 +56,7 @@
   [input]
   (for [line (line-seq input)
         :let [[_ date-str _ commodity unit price] (str/split line #" ")]]
-    {:date date-str
+    {:date (parse-date date-str)
      :commodity commodity
      :unit unit
      :price (Double/parseDouble price)}))
