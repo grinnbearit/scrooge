@@ -17,3 +17,13 @@
              {:keys [account commodity amount]} (:postings transaction)]
          {account {commodity amount}})
        (reduce (partial merge-with (partial merge-with +)))))
+
+
+(defn net-worth
+  "Given a set of account balances, sums all
+  accounts with Asset and Liability prefixes"
+  [accounts]
+  (->> (for [[[root] bal] accounts
+             :when (#{"Assets" "Liabilities"} root)]
+         {[root] bal})
+       (reduce (partial merge-with (partial merge-with +)))))

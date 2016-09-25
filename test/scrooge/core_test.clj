@@ -28,3 +28,15 @@
                    "BTC" 1.0}
      ["Wallet"] {"$" -10.0
                  "BTC" -1.0}})
+
+
+(facts
+ "net worth"
+
+ (net-worth {["Assets" "Wallet"] {"$" 10.0
+                                  "BTC" 1.0}
+             ["Assets" "Bank"] {"$" 100.0}
+             ["Liabilities" "Credit Card"] {"$" -100.0}})
+ => {["Assets"] {"$" 110.0
+                 "BTC" 1.0}
+     ["Liabilities"] {"$" -100.0}})
