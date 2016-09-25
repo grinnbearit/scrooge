@@ -10,10 +10,10 @@
                    "INR" 0.02
                    "BTC" 750.0}]
 
-   (convert-commodities dollar-map "BTC" "INR")
+   (convert-amount dollar-map "BTC" "INR" 1.0)
    => 37500.0
 
-   (convert-commodities dollar-map "BTC" "INR" 2.0)
+   (convert-amount dollar-map "BTC" "INR" 2.0)
    => 75000.0))
 
 
@@ -28,6 +28,17 @@
                    "BTC" 1.0}
      ["Wallet"] {"$" -10.0
                  "BTC" -1.0}})
+
+
+(facts
+ "convert accounts"
+
+ (convert-accounts {["Assets"] {"$" 10.0 "BTC" 1.0}
+                    ["Liabilities"] {"$" -10.0}}
+                   {"$" 1.0 "BTC" 750.0}
+                   "$")
+ => {["Assets"] {"$" 760.0}
+     ["Liabilities"] {"$" -10.0}})
 
 
 (facts

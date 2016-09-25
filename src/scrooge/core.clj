@@ -1,13 +1,11 @@
 (ns scrooge.core)
 
 
-(defn convert-commodities
+(defn convert-amount
   "Given a dollar-map, converts any 2 commodities"
-  ([dollar-map from to]
-   (convert-commodities dollar-map from to 1.0))
-  ([dollar-map from to amount]
-   (/ (* amount (dollar-map from))
-      (dollar-map to))))
+  [dollar-map from to amount]
+  (/ (* amount (dollar-map from))
+     (dollar-map to)))
 
 
 (defn balance
@@ -16,6 +14,15 @@
   (->> (for [transaction ledger
              {:keys [account commodity amount]} (:postings transaction)]
          {account {commodity amount}})
+       (reduce (partial merge-with (partial merge-with +)))))
+
+
+(defn convert-accounts
+  "Convert all account balances to the same commodity"
+  [accounts dollar-map to]
+  (->> (for [[account bal] accounts
+             [commodity amount] bal]
+         {account {to (convert-amount dollar-map commodity to amount)}})
        (reduce (partial merge-with (partial merge-with +)))))
 
 

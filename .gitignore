@@ -10,3 +10,4 @@ pom.xml.asc
 .hgignore
 .hg/
 ledger.xml
+prices.dat
