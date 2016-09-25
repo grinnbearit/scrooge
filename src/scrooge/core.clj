@@ -8,3 +8,12 @@
   ([dollar-map from to amount]
    (/ (* amount (dollar-map from))
       (dollar-map to))))
+
+
+(defn balance
+  "Returns the balance amount in every account"
+  [ledger]
+  (->> (for [transaction ledger
+             {:keys [account commodity amount]} (:postings transaction)]
+         {account {commodity amount}})
+       (reduce (partial merge-with (partial merge-with +)))))
