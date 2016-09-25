@@ -23,7 +23,7 @@
         account (xml1-> node :account :name text)
         commodity (xml1-> node :post-amount :amount :commodity :symbol text)
         amount (xml1-> node :post-amount :amount :quantity text)]
-    {:account account
+    {:account (str/split account #":")
      :note note
      :commodity commodity
      :amount (Double/parseDouble amount)}))
