@@ -34,3 +34,23 @@
              :when (#{"Assets" "Liabilities"} root)]
          {[root] bal})
        (reduce (partial merge-with (partial merge-with +)))))
+
+
+(defn portfolio
+  "Returns fractions of net-worth for all assets"
+  [accounts dollar-map & {:keys [tolerance] :or {tolerance 0.001}}]
+
+  (letfn [(reducer [port [acc amt]]
+            (assoc-in port acc amt))]
+
+    (let [dollar-accounts (convert-accounts accounts dollar-map "$")
+          total (get-in (net-worth dollar-accounts) [["Assets"] "$"])]
+
+      (->> (for [[[root :as account] bal] accounts
+                 :when (= "Assets" root)
+                 [commodity amount] bal
+                 :let [converted (convert-amount dollar-map commodity "$" amount)
+                       fraction (/ converted total)]
+                 :when (> fraction tolerance)]
+             [(conj account commodity) (/ converted total)])
+           (reduce reducer {})))))

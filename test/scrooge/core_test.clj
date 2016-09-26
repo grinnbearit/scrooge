@@ -51,3 +51,17 @@
  => {["Assets"] {"$" 110.0
                  "BTC" 1.0}
      ["Liabilities"] {"$" -100.0}})
+
+
+(facts
+ "portfolio"
+
+ (portfolio {["Assets" "Wallet"] {"$" 100 "BTC" 1}
+             ["Assets" "Bank"] {"$" 100}
+             ["Assets" "Sofa"] {"$" 1}
+             ["Liabilities" "Credit Card"] {"$" -100}}
+            {"$" 1 "BTC" 100}
+            :tolerance 1/100)
+ => {"Assets" {"Bank" {"$" 100/301},
+               "Wallet" {"$" 100/301,
+                         "BTC" 100/301}}})
