@@ -1,6 +1,19 @@
 (ns scrooge.core-test
   (:require [midje.sweet :refer :all]
-            [scrooge.core :refer :all]))
+            [scrooge.core :refer :all]
+            [clj-time.core :as t]))
+
+
+(facts
+ "postings"
+
+ (postings [{:date (t/local-date 2000 1 1)}
+            {:date (t/local-date 2001 1 1)}
+            {:date (t/local-date 2001 1 2)}
+            {:date (t/local-date 2010 1 1)}]
+           :from (t/local-date 2001 1 1)
+           :to (t/local-date 2001 1 2))
+ => [{:date (t/local-date 2001 1 1)}])
 
 
 (facts

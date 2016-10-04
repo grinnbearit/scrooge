@@ -1,4 +1,5 @@
-(ns scrooge.core)
+(ns scrooge.core
+  (:require [clj-time.core :as t]))
 
 
 (defn convert-amount
@@ -6,6 +7,17 @@
   [dollar-map from to amount]
   (/ (* amount (dollar-map from))
      (dollar-map to)))
+
+
+(defn postings
+  "Filters ledger entries"
+  [ledger & {:keys [from to]}]
+  (for [{:keys [date] :as transaction} ledger
+        :when (and (or (nil? from)
+                       (not (t/before? date from)))
+                   (or (nil? to)
+                       (t/before? date to)))]
+    transaction))
 
 
 (defn balance
