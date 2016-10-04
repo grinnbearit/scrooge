@@ -38,6 +38,19 @@
        (reduce (partial merge-with (partial merge-with +)))))
 
 
+(defn expenses
+  "Given a set of account balances and a level,
+  returns all Expenses aggregated at level"
+  [accounts level]
+  (->> (for [[[root :as account] bal] accounts
+             :when (= "Expenses" root)
+             :let [sub-acc (if (< level (count account))
+                             (subvec account 0 (inc level))
+                             account)]]
+         {sub-acc bal})
+       (reduce (partial merge-with (partial merge-with +)))))
+
+
 (defn net-worth
   "Given a set of account balances, sums all
   accounts with Asset and Liability prefixes"

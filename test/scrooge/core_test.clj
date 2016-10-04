@@ -55,6 +55,31 @@
 
 
 (facts
+ "expsenses"
+
+ (let [bal {["Assets" "Wallet"] {"$" 10.0
+                                 "BTC" 1.0}
+            ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
+            ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
+            ["Expenses" "Taxes"] {"$" 100.0}}]
+
+   (expenses bal 0)
+   => {["Expenses"] {"$" 300.0}}
+
+   (expenses bal 1)
+   => {["Expenses" "Eating Out"] {"$" 200.0}
+       ["Expenses" "Taxes"] {"$" 100.0}}
+
+   (expenses bal 2)
+   => {["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
+       ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
+       ["Expenses" "Taxes"] {"$" 100.0}}
+
+   (expenses bal 3)
+   => (expenses bal 2)))
+
+
+(facts
  "net worth"
 
  (net-worth {["Assets" "Wallet"] {"$" 10.0
