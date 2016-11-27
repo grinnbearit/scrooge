@@ -1,5 +1,6 @@
 (ns scrooge.core
-  (:require [clj-time.core :as t]))
+  (:require [clj-time.core :as t]
+            [swissknife.core :refer [map-values]]))
 
 
 (defn convert-amount
@@ -38,17 +39,26 @@
        (reduce (partial merge-with (partial merge-with +)))))
 
 
-(defn expenses
+(defn aggregate
   "Given a set of account balances and a level,
-  returns all Expenses aggregated at level"
+  returns all balances aggregated at level"
   [accounts level]
   (->> (for [[[root :as account] bal] accounts
-             :when (= "Expenses" root)
              :let [sub-acc (if (< level (count account))
                              (subvec account 0 (inc level))
                              account)]]
          {sub-acc bal})
        (reduce (partial merge-with (partial merge-with +)))))
+
+
+(defn match
+  "Given a set of account balances and a pattern
+  returns all accounts having a piece that matches the pattern"
+  [accounts pattern]
+  (->> (for [[account bal] accounts
+             :when (some #(= pattern %) account)]
+         [account bal])
+       (into {})))
 
 
 (defn net-worth
@@ -79,3 +89,10 @@
                  :when (> fraction tolerance)]
              [(conj account commodity) (/ converted total)])
            (reduce reducer {})))))
+
+
+(defn delta
+  "Returns absolute differences between accounts"
+  [accounts-1 accounts-2]
+  (->> (map-values (partial map-values -) accounts-2)
+       (merge-with (partial merge-with +) accounts-1)))

@@ -55,7 +55,7 @@
 
 
 (facts
- "expsenses"
+ "aggregate"
 
  (let [bal {["Assets" "Wallet"] {"$" 10.0
                                  "BTC" 1.0}
@@ -63,20 +63,35 @@
             ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
             ["Expenses" "Taxes"] {"$" 100.0}}]
 
-   (expenses bal 0)
-   => {["Expenses"] {"$" 300.0}}
+   (aggregate bal 0)
+   => {["Assets"] {"$" 10.0 "BTC" 1.0}
+       ["Expenses"] {"$" 300.0}}
 
-   (expenses bal 1)
-   => {["Expenses" "Eating Out"] {"$" 200.0}
+   (aggregate bal 1)
+   => {["Assets" "Wallet"] {"$" 10.0 "BTC" 1.0}
+       ["Expenses" "Eating Out"] {"$" 200.0}
        ["Expenses" "Taxes"] {"$" 100.0}}
 
-   (expenses bal 2)
+   (aggregate bal 2)
+   => bal))
+
+
+(facts
+ "match"
+
+ (let [bal {["Assets" "Wallet"] {"$" 10.0
+                                 "BTC" 1.0}
+            ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
+            ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
+            ["Expenses" "Taxes"] {"$" 100.0}}]
+
+   (match bal "Assets")
+   => {["Assets" "Wallet"] {"$" 10.0
+                            "BTC" 1.0}}
+
+   (match bal "Eating Out")
    => {["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
-       ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
-       ["Expenses" "Taxes"] {"$" 100.0}}
-
-   (expenses bal 3)
-   => (expenses bal 2)))
+       ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}}))
 
 
 (facts
@@ -103,3 +118,18 @@
  => {"Assets" {"Bank" {"$" 100/301},
                "Wallet" {"$" 100/301,
                          "BTC" 100/301}}})
+
+
+(facts
+ "delta"
+
+ (delta {["Expenses" "Groceries"] {"$" 10.0}
+         ["Expenses" "Eating Out" "Coffee Shops"] {"$" 20.0}
+         ["Expenses" "Eating Out" "Restaurants"] {"$" 10.0}}
+        {["Expenses" "Eating Out" "Coffee Shops"] {"$" 10.0}
+         ["Expenses" "Eating Out" "Restaurants"] {"$" 20.0}
+         ["Expenses" "Travel"] {"$" 10.0}})
+ => {["Expenses" "Groceries"] {"$" 10.0}
+     ["Expenses" "Eating Out" "Coffee Shops"] {"$" 10.0}
+     ["Expenses" "Eating Out" "Restaurants"] {"$" -10.0}
+     ["Expenses" "Travel"] {"$" -10.0}})
