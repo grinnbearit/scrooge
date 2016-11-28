@@ -57,39 +57,39 @@
 (facts
  "aggregate"
 
- (let [bal {["Assets" "Wallet"] {"$" 10.0
-                                 "BTC" 1.0}
-            ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
-            ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
-            ["Expenses" "Taxes"] {"$" 100.0}}]
+ (let [accounts {["Assets" "Wallet"] {"$" 10.0
+                                      "BTC" 1.0}
+                 ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
+                 ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
+                 ["Expenses" "Taxes"] {"$" 100.0}}]
 
-   (aggregate bal 0)
+   (aggregate accounts 0)
    => {["Assets"] {"$" 10.0 "BTC" 1.0}
        ["Expenses"] {"$" 300.0}}
 
-   (aggregate bal 1)
+   (aggregate accounts 1)
    => {["Assets" "Wallet"] {"$" 10.0 "BTC" 1.0}
        ["Expenses" "Eating Out"] {"$" 200.0}
        ["Expenses" "Taxes"] {"$" 100.0}}
 
-   (aggregate bal 2)
-   => bal))
+   (aggregate accounts 2)
+   => accounts))
 
 
 (facts
  "match"
 
- (let [bal {["Assets" "Wallet"] {"$" 10.0
-                                 "BTC" 1.0}
-            ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
-            ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
-            ["Expenses" "Taxes"] {"$" 100.0}}]
+ (let [accounts {["Assets" "Wallet"] {"$" 10.0
+                                      "BTC" 1.0}
+                 ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
+                 ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
+                 ["Expenses" "Taxes"] {"$" 100.0}}]
 
-   (match bal "Assets")
+   (match accounts "Assets")
    => {["Assets" "Wallet"] {"$" 10.0
                             "BTC" 1.0}}
 
-   (match bal "Eating Out")
+   (match accounts "Eating Out")
    => {["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
        ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}}))
 
@@ -97,16 +97,16 @@
 (facts
  "fractional"
 
- (let [bal {["Assets" "Wallet"] {"BTC" 1.0}
-            ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
-            ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}}]
+ (let [accounts {["Assets" "Wallet"] {"BTC" 1.0}
+                 ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
+                 ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}}]
 
-   (fractional bal {"$" 1.0 "BTC" 800.0})
+   (fractional accounts {"$" 1.0 "BTC" 800.0})
    => {["Assets" "Wallet"] {"BTC" 0.8}
        ["Expenses" "Eating Out" "Coffee Shops"] {"$" 0.1}
        ["Expenses" "Eating Out" "Restaurants"] {"$" 0.1}}
 
-   (fractional bal {"$" 1.0 "BTC" 800.0} :tolerance 0.1)
+   (fractional accounts {"$" 1.0 "BTC" 800.0} :tolerance 0.1)
    => {["Assets" "Wallet"] {"BTC" 0.8}}))
 
 
