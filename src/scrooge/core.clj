@@ -61,33 +61,24 @@
        (into {})))
 
 
-(defn net-worth
-  "Given a set of account balances, sums all
-  accounts with Asset and Liability prefixes"
-  [accounts]
-  (->> (for [[[root] bal] accounts
-             :when (#{"Assets" "Liabilities"} root)]
-         {[root] bal})
-       (reduce (partial merge-with (partial merge-with +)))))
-
-
-(defn portfolio
-  "Returns fractions of net-worth for all assets"
+(defn fractional
+  "Given a set of account balances and a dollar map returns
+   fractions of the whole for each account and currency"
   [accounts dollar-map & {:keys [tolerance] :or {tolerance 0.001}}]
+  (letfn [(reducer [m [act comm amt]]
+            (assoc-in m [act comm] amt))]
 
-  (letfn [(reducer [port [acc amt]]
-            (assoc-in port acc amt))]
+    (let [total (->> (convert-accounts accounts dollar-map "$")
+                     (vals)
+                     (mapcat vals)
+                     (reduce +))]
 
-    (let [dollar-accounts (convert-accounts accounts dollar-map "$")
-          total (get-in (net-worth dollar-accounts) [["Assets"] "$"])]
-
-      (->> (for [[[root :as account] bal] accounts
-                 :when (= "Assets" root)
+      (->> (for [[account bal] accounts
                  [commodity amount] bal
                  :let [converted (convert-amount dollar-map commodity "$" amount)
                        fraction (/ converted total)]
                  :when (> fraction tolerance)]
-             [(conj account commodity) (/ converted total)])
+             [account commodity fraction])
            (reduce reducer {})))))
 
 

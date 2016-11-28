@@ -95,29 +95,20 @@
 
 
 (facts
- "net worth"
+ "fractional"
 
- (net-worth {["Assets" "Wallet"] {"$" 10.0
-                                  "BTC" 1.0}
-             ["Assets" "Bank"] {"$" 100.0}
-             ["Liabilities" "Credit Card"] {"$" -100.0}})
- => {["Assets"] {"$" 110.0
-                 "BTC" 1.0}
-     ["Liabilities"] {"$" -100.0}})
+ (let [bal {["Assets" "Wallet"] {"BTC" 1.0}
+            ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
+            ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}}]
 
+   (fractional bal {"$" 1.0 "BTC" 800.0})
+   => {["Assets" "Wallet"] {"BTC" 0.8}
+       ["Expenses" "Eating Out" "Coffee Shops"] {"$" 0.1}
+       ["Expenses" "Eating Out" "Restaurants"] {"$" 0.1}}
 
-(facts
- "portfolio"
+   (fractional bal {"$" 1.0 "BTC" 800.0} :tolerance 0.1)
+   => {["Assets" "Wallet"] {"BTC" 0.8}}))
 
- (portfolio {["Assets" "Wallet"] {"$" 100 "BTC" 1}
-             ["Assets" "Bank"] {"$" 100}
-             ["Assets" "Sofa"] {"$" 1}
-             ["Liabilities" "Credit Card"] {"$" -100}}
-            {"$" 1 "BTC" 100}
-            :tolerance 1/100)
- => {"Assets" {"Bank" {"$" 100/301},
-               "Wallet" {"$" 100/301,
-                         "BTC" 100/301}}})
 
 
 (facts
