@@ -87,3 +87,12 @@
   [accounts-1 accounts-2]
   (->> (map-values (partial map-values -) accounts-2)
        (merge-with (partial merge-with +) accounts-1)))
+
+
+;;; reporting
+
+
+(defn net-worth
+  [accounts]
+  (let [agg (aggregate accounts 0)]
+    (merge-with + (agg ["Assets"]) (agg ["Liabilities"]))))

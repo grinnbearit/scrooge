@@ -124,3 +124,25 @@
      ["Expenses" "Eating Out" "Coffee Shops"] {"$" 10.0}
      ["Expenses" "Eating Out" "Restaurants"] {"$" -10.0}
      ["Expenses" "Travel"] {"$" -10.0}})
+
+
+
+;;; reporting
+
+
+(facts
+ "net worth"
+
+ (let [accounts {["Assets" "Wallet"] {"$" 10.0}
+                 ["Assets" "Cupboard"] {"$" 10.0}
+                 ["Liabilities" "Loans"] {"$" -20.0}
+                 ["Expenses" "Eating Out"] {"$" 20.0}}]
+
+   (net-worth accounts)
+   => {"$" 0.0}
+
+   (provided
+    (aggregate accounts 0)
+    => {["Assets"] {"$" 20.0}
+        ["Liabilities"] {"$" -20.0}
+        ["Expenses"] {"$" 20.0}})))
