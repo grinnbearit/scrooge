@@ -4,10 +4,10 @@
 
 
 (defn convert-amount
-  "Given a dollar-map, converts any 2 commodities"
-  [dollar-map from to amount]
-  (/ (* amount (dollar-map from))
-     (dollar-map to)))
+  "Given a map of prices, converts any 2 commodities"
+  [prices from to amount]
+  (/ (* amount (prices from))
+     (prices to)))
 
 
 (defn postings
@@ -32,10 +32,10 @@
 
 (defn convert-accounts
   "Convert all account balances to the same commodity"
-  [accounts dollar-map to]
+  [accounts prices to]
   (->> (for [[account bal] accounts
              [commodity amount] bal]
-         {account {to (convert-amount dollar-map commodity to amount)}})
+         {account {to (convert-amount prices commodity to amount)}})
        (reduce (partial merge-with (partial merge-with +)))))
 
 
@@ -64,18 +64,18 @@
 (defn fractional
   "Given a set of account balances and a dollar map returns
    fractions of the whole for each account and currency"
-  [accounts dollar-map & {:keys [tolerance] :or {tolerance 0.001}}]
+  [accounts prices & {:keys [tolerance] :or {tolerance 0.001}}]
   (letfn [(reducer [m [act comm amt]]
             (assoc-in m [act comm] amt))]
 
-    (let [total (->> (convert-accounts accounts dollar-map "$")
+    (let [total (->> (convert-accounts accounts prices "$")
                      (vals)
                      (mapcat vals)
                      (reduce +))]
 
       (->> (for [[account bal] accounts
                  [commodity amount] bal
-                 :let [converted (convert-amount dollar-map commodity "$" amount)
+                 :let [converted (convert-amount prices commodity "$" amount)
                        fraction (/ converted total)]
                  :when (> fraction tolerance)]
              [account commodity fraction])

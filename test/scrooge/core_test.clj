@@ -19,14 +19,14 @@
 (facts
  "convert"
 
- (let [dollar-map {"$" 1.0
-                   "INR" 0.02
-                   "BTC" 750.0}]
+ (let [prices {"$" 1.0
+               "INR" 0.02
+               "BTC" 750.0}]
 
-   (convert-amount dollar-map "BTC" "INR" 1.0)
+   (convert-amount prices "BTC" "INR" 1.0)
    => 37500.0
 
-   (convert-amount dollar-map "BTC" "INR" 2.0)
+   (convert-amount prices "BTC" "INR" 2.0)
    => 75000.0))
 
 
