@@ -9,9 +9,11 @@
   (/ (* amount (prices from))
      (prices to)))
 
+;;; postings
 
-(defn postings
-  "Filters ledger entries"
+(defn between
+  "Filters ledger entries to those that are
+  `from` <= `date` < `to`"
   [ledger & {:keys [from to]}]
   (for [{:keys [date] :as transaction} ledger
         :when (and (or (nil? from)
@@ -29,6 +31,7 @@
          {account {commodity amount}})
        (reduce (partial merge-with (partial merge-with +)))))
 
+;;; accounts
 
 (defn convert-accounts
   "Convert all account balances to the same commodity"

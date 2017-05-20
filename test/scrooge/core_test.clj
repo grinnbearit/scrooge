@@ -5,18 +5,6 @@
 
 
 (facts
- "postings"
-
- (postings [{:date (t/local-date 2000 1 1)}
-            {:date (t/local-date 2001 1 1)}
-            {:date (t/local-date 2001 1 2)}
-            {:date (t/local-date 2010 1 1)}]
-           :from (t/local-date 2001 1 1)
-           :to (t/local-date 2001 1 2))
- => [{:date (t/local-date 2001 1 1)}])
-
-
-(facts
  "convert"
 
  (let [prices {"$" 1.0
@@ -28,6 +16,19 @@
 
    (convert-amount prices "BTC" "INR" 2.0)
    => 75000.0))
+
+;;; postings
+
+(facts
+ "between"
+
+ (between [{:date (t/local-date 2000 1 1)}
+           {:date (t/local-date 2001 1 1)}
+           {:date (t/local-date 2001 1 2)}
+           {:date (t/local-date 2010 1 1)}]
+          :from (t/local-date 2001 1 1)
+          :to (t/local-date 2001 1 2))
+ => [{:date (t/local-date 2001 1 1)}])
 
 
 (facts
@@ -41,6 +42,8 @@
                    "BTC" 1.0}
      ["Wallet"] {"$" -10.0
                  "BTC" -1.0}})
+
+;;; accounts
 
 
 (facts
