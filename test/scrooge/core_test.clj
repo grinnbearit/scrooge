@@ -32,6 +32,92 @@
 
 
 (facts
+ "posting matchables"
+
+ (#'scrooge.core/posting-matchables
+  {:note nil :account ["Expenses" "Groceries"]})
+ => [[:account "Expenses"]
+     [:account "Groceries"]]
+
+
+ (#'scrooge.core/posting-matchables
+  {:note "note" :account ["Expenses" "Groceries"]})
+ => [[:note "note"]
+     [:account "Expenses"]
+     [:account "Groceries"]])
+
+
+(facts
+ "transaction matchables"
+
+ (#'scrooge.core/transaction-matchables
+  {:note nil :payee "payee" :postings [:postings-1
+                                       :postings-2]})
+ => [[:payee "payee"]
+     [:note "posting-1"]
+     [:account "account-1"]
+     [:note "posting-2"]
+     [:account "account-2"]]
+
+ (provided
+  (posting-matchables :postings-1)
+  => [[:note "posting-1"]
+      [:account "account-1"]]
+
+  (posting-matchables :postings-2)
+  => [[:note "posting-2"]
+      [:account "account-2"]])
+
+
+ (#'scrooge.core/transaction-matchables
+  {:note "note" :payee "payee" :postings []})
+
+ => [[:note "note"]
+     [:payee "payee"]])
+
+
+(facts
+ "match"
+
+ (let [ledger [{:note "Quarterly Interest" :payee "Big Bank"
+                :postings [{:note nil :account ["Income" "Interest"]}
+                           {:note nil :account ["Assets" "Savings" "Bank"]}]}
+               {:note nil :payee "Small Store"
+                :postings [{:note "Milk" :account ["Expenses" "Groceries"]}
+                           {:note "Eggs" :account ["Expenses" "Groceries"]}
+                           {:note nil :account ["Assets" "Savings" "Wallet"]}]}]]
+
+   ;; text match
+   (match ledger "groceries")
+   => [(ledger 1)]
+
+
+   ;; regex match
+   (match ledger #"groceries")
+   => []
+
+
+   ;; regex match case insensitive
+   (match ledger #"(?i)groceries")
+   => [(ledger 1)]
+
+
+   ;; match both entries
+   (match ledger "savings")
+   => ledger
+
+   ;; match both entries
+   (match ledger #"(Big|Milk).*")
+   => ledger
+
+   (match ledger #"(Big|Milk).*" :include #{:payee})
+   => [(ledger 0)]
+
+   (match ledger #"(Big|Milk).*" :exclude #{:payee})
+   => [(ledger 1)]))
+
+
+(facts
  "balance"
 
  (balance [{:postings [{:account ["Expenses"] :commodity "$" :amount 10.0}
@@ -77,24 +163,6 @@
 
    (aggregate accounts 2)
    => accounts))
-
-
-(facts
- "match"
-
- (let [accounts {["Assets" "Wallet"] {"$" 10.0
-                                      "BTC" 1.0}
-                 ["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
-                 ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}
-                 ["Expenses" "Taxes"] {"$" 100.0}}]
-
-   (match accounts "Assets")
-   => {["Assets" "Wallet"] {"$" 10.0
-                            "BTC" 1.0}}
-
-   (match accounts "Eating Out")
-   => {["Expenses" "Eating Out" "Coffee Shops"] {"$" 100.0}
-       ["Expenses" "Eating Out" "Restaurants"] {"$" 100.0}}))
 
 
 (facts

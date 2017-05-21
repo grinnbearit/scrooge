@@ -1,5 +1,7 @@
 (ns scrooge.core
   (:require [clj-time.core :as t]
+            [clojure.string :as str]
+            [clojure.set :as set]
             [swissknife.core :refer [map-values]]))
 
 
@@ -21,6 +23,63 @@
                    (or (nil? to)
                        (t/before? date to)))]
     transaction))
+
+
+(defmulti match
+  "Returns all postings that satisfy matcher
+
+  if pattern is a string, returns all postings that have
+  a component that contains it as a case insensitive substring
+
+  if pattern is a regex, returns all postings that satisfy it"
+  (fn [ledger pattern & sections]
+    (type pattern)))
+
+
+(defn posting-matchables
+  "Returns a list of text pieces from a posting
+  that can be matched against"
+  [{:keys [note account]}]
+  (cond-> (for [acc account]
+            [:account acc])
+    note (conj [:note note])))
+
+
+(defn- transaction-matchables
+  "Returns a list of text pieces from a transaction
+  which can be matched against"
+  [{:keys [note payee postings]}]
+  (cond-> (conj (mapcat posting-matchables postings)
+                [:payee payee])
+    note (conj [:note note])))
+
+
+(defmethod match java.lang.String
+  [ledger pattern & {:keys [include exclude]
+                     :or {include #{:account :note :payee}
+                          exclude #{}}}]
+  (let [ptrn (str/lower-case pattern)
+        included? (set/difference include exclude)]
+    (for [transaction ledger
+          :when (some identity
+                      (for [[section text] (transaction-matchables transaction)
+                            :when (included? section)
+                            :let [txt (str/lower-case text)]]
+                        (str/includes? txt ptrn)))]
+      transaction)))
+
+
+(defmethod match java.util.regex.Pattern
+  [ledger pattern & {:keys [include exclude]
+                     :or {include #{:account :note :payee}
+                          exclude #{}}}]
+  (let [included? (set/difference include exclude)]
+    (for [transaction ledger
+          :when (some identity
+                      (for [[section text] (transaction-matchables transaction)
+                            :when (included? section)]
+                        (re-matches pattern text)))]
+      transaction)))
 
 
 (defn balance
@@ -52,16 +111,6 @@
                              account)]]
          {sub-acc bal})
        (reduce (partial merge-with (partial merge-with +)))))
-
-
-(defn match
-  "Given a set of account balances and a pattern
-  returns all accounts having a piece that matches the pattern"
-  [accounts pattern]
-  (->> (for [[account bal] accounts
-             :when (some #(= pattern %) account)]
-         [account bal])
-       (into {})))
 
 
 (defn fractional
