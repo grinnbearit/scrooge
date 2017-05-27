@@ -69,3 +69,17 @@
 
   (sc/fractional {:net-worth {"BTC" 10.0}} "prices" :tolerance 0.001)
   => {:net-worth {"BTC" 1.0}}))
+
+
+(facts
+ "valuation"
+
+ (valuation "ledger" "prices" "$")
+ => {"BTC" {"$" 100.0} "$" {"$" 100.0}}
+
+ (provided
+  (net-worth "ledger")
+  => {"BTC" 10.0 "$" 100.0}
+
+  (sc/convert-accounts {"BTC" {"BTC" 10.0} "$" {"$" 100.0}} "prices" "$")
+  => {"BTC" {"$" 100.0} "$" {"$" 100.0}}))

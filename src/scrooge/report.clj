@@ -41,3 +41,12 @@
     (-> {:net-worth (select-keys commodities included-keys)}
         (sc/fractional prices :tolerance tolerance)
         (:net-worth))))
+
+
+(defn valuation
+  "Returns current value of each commodity in net-worth"
+  [ledger prices commodity]
+  (letfn [(reducer [acc [comm units]]
+            (assoc acc comm {comm units}))]
+    (-> (reduce reducer {} (net-worth ledger))
+        (sc/convert-accounts prices commodity))))
