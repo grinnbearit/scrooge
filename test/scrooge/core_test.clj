@@ -195,3 +195,24 @@
      ["Expenses" "Eating Out" "Coffee Shops"] {"$" 10.0}
      ["Expenses" "Eating Out" "Restaurants"] {"$" -10.0}
      ["Expenses" "Travel"] {"$" -10.0}})
+
+
+(facts
+ "subaccounts"
+
+ (subaccounts {["Assets" "Wallet"] {"$" 10.0}
+               ["Expenses" "Restaurants"] {"$" 5.0}}
+              "assets")
+ => {["Assets" "Wallet"] {"$" 10.0}}
+
+
+ (subaccounts {["Assets" "Wallet"] {"$" 10.0}
+               ["Expenses" "Restaurants"] {"$" 5.0}}
+              #"set")
+ => {}
+
+
+ (subaccounts {["Assets" "Wallet"] {"$" 10.0}
+               ["Expenses" "Restaurants"] {"$" 5.0}}
+              #"W.+t")
+ => {["Assets" "Wallet"] {"$" 10.0}})

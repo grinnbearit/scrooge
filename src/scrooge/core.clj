@@ -139,3 +139,32 @@
   [accounts-1 accounts-2]
   (->> (map-values (partial map-values -) accounts-2)
        (merge-with (partial merge-with +) accounts-1)))
+
+
+(defmulti subaccounts
+  "Returns all accounts that satisfy matcher
+
+  if pattern is a string, returns all accounts that have
+  a component that contains it as a case insensitive substring
+
+  if pattern is a regex, returns all accounts that have
+  acomponent that satisfy it"
+  (fn [accounts pattern]
+    (type pattern)))
+
+
+(defmethod subaccounts java.lang.String
+  [accounts pattern]
+  (let [ptrn (str/lower-case pattern)]
+    (->> (for [[account bal :as entry] accounts
+               :when (some #(str/includes? (str/lower-case %) ptrn) account)]
+           entry)
+         (into {}))))
+
+
+(defmethod subaccounts java.util.regex.Pattern
+  [accounts pattern]
+  (->> (for [[account bal :as entry] accounts
+               :when (some #(re-matches pattern %) account)]
+           entry)
+       (into {})))
