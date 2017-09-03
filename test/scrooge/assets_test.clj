@@ -12,32 +12,36 @@
                     ["A" "ii"] {"$" 20.0}
                     ["A" "iii"] {"$" -5.0
                                  "BTC" 1.0}})
- => {"$" {"$" 25.0}
-     "BTC" {"BTC" 1.0}})
+ => {"$" 25.0
+     "BTC" 1.0})
 
 
 (facts
- "convert assets"
+ "total value"
 
- (let [prices {"$" 1.0 "BTC" 100.0 "INR" 1/2}]
+ (let [prices {"$" 1.0
+               "BTC" 100.0}]
 
-   (convert-assets {"$" {"$" 10.0}
-                    "BTC" {"BTC" 2.0}}
-                   prices
-                   "$")
-   => {"$" {"$" 10.0}
-       "BTC" {"$" 200.0
-              "BTC" 2.0}}
+   (total-value {"$" -25.0
+                 "BTC" 1.0}
+                prices
+                "$")
+   => 75.0
 
    (provided
-    (convert-amount prices "$" "$" 10.0) => 10.0
-    (convert-amount prices "BTC" "$" 2.0) => 200.0)))
+    (convert-amount prices "$" "$" -25.0) => -25.0
+    (convert-amount prices "BTC" "$" 1.0) => 100.0)))
 
 
 (facts
- "reset assets"
+ "rebalance assets"
 
- (reset-assets {"$" {"$" 10.0 "BTC" 1/1000}
-                "BTC" {"$" 200.0 "BTC" 2.0}})
- => {"$" {"$" 10.0}
-     "BTC" {"BTC" 2.0}})
+ (let [prices {"$" 1.0 "BTC" 100.0}]
+
+   (rebalance-assets {"$" 1000.0 "INR" 100.0} prices {"$" 0.5 "BTC" 0.5})
+   => {"$" 500.0 "BTC" 5.0}
+
+   (provided
+    (total-value {"$" 1000.0 "BTC" 0.0} prices "$") => 1000.0
+    (convert-amount prices "$" "$" 500.0) => 500.0
+    (convert-amount prices "$" "BTC" 500.0) => 5.0)))

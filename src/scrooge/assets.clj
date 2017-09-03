@@ -3,27 +3,29 @@
 
 
 (defn accounts->assets
-  "Given an accounts balance returns a map of all assets to prices"
+  "Given an accounts balance returns a map of all assets to units"
   [accounts]
-  (->> (for [[comm value] (->> (vals accounts)
-                               (apply merge-with +))]
-         [comm {comm value}])
-       (into {})))
+  (->> (vals accounts)
+       (apply merge-with +)))
 
 
-(defn convert-assets
-  "Converts assets into a specific unit, doesn't remove
-  the existing units"
-  [assets prices to]
-  (->> (for [[asset units] assets
-             :let [to-units (convert-amount prices asset to (units asset))]]
-         [asset (assoc units to to-units)])
-       (into {})))
+(defn total-value
+  "Returns the total value of the asset map in the passed unit"
+  [assets prices unit]
+  (letfn [(reducer [acc [asset amt]]
+            (+ acc (convert-amount prices asset unit amt)))]
+    (reduce reducer 0 assets)))
 
 
-(defn reset-assets
-  "Resets assets to just their original number of units"
-  [assets]
-  (->> (for [[asset units] assets]
-         [asset {asset (units asset)}])
-       (into {})))
+(defn rebalance-assets
+  "Rebalances assets according to the fractions in the passed allocation map
+
+  Only considers assets in the allocation map"
+  [assets prices allocation]
+  (let [rel-assets (merge (zipmap (keys allocation) (repeat 0.0))
+                          (select-keys assets (keys allocation)))
+        dollar-total (total-value rel-assets prices "$")]
+    (->> (for [[asset amt] rel-assets
+               :let [dollar-share (* (allocation asset) dollar-total)]]
+           [asset (convert-amount prices "$" asset dollar-share)])
+         (into {}))))
