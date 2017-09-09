@@ -2,12 +2,17 @@
   (:require [clj-time.core :as t]
             [scrooge.core :as sc]
             [scrooge.parse :as sp]
+            [scrooge.assets :as sa]
             [clojure.set :as set]))
 
 
 (def EUR "€")
 (def INR "₹")
 
+(def ALLOCATION
+  {"NIFTYBEES" 0.16 "GOLDBEES" 0.04
+   "BONDMEES" 0.16 "EQTYMEES" 0.64
+   EUR 0.0 INR 0.0})
 
 (defn- _net-worth
   [accounts]
@@ -50,3 +55,11 @@
             (assoc acc comm {comm units}))]
     (-> (reduce reducer {} (net-worth ledger))
         (sc/convert-accounts prices commodity))))
+
+
+(defn asset-delta
+  "Returns the number of units of each asset that need to be bought
+  to rebalance the portfolio"
+  [assets prices allocation]
+  (let [rebalanced (sa/rebalance-assets assets prices allocation)]
+    (merge-with - rebalanced assets)))

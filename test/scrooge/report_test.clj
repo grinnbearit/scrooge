@@ -1,7 +1,8 @@
 (ns scrooge.report-test
   (:require [midje.sweet :refer :all]
             [scrooge.report :refer :all]
-            [scrooge.core :as sc]))
+            [scrooge.core :as sc]
+            [scrooge.assets :as sa]))
 
 
 (facts
@@ -83,3 +84,14 @@
 
   (sc/convert-accounts {"BTC" {"BTC" 10.0} "$" {"$" 100.0}} "prices" "$")
   => {"BTC" {"$" 100.0} "$" {"$" 100.0}}))
+
+
+(facts
+ "asset delta"
+
+ (asset-delta {"$" 100.0 "BTC" 1.0} "prices" "allocation")
+ => {"$" -100.0 "BTC" 1.0}
+
+ (provided
+  (sa/rebalance-assets {"$" 100.0 "BTC" 1.0} "prices" "allocation")
+  => {"$" 0.0 "BTC" 2.0}))
