@@ -6,4 +6,5 @@
                  [org.clojure/data.zip "0.1.2"]
                  [clj-time "0.14.2"]
                  [swissknife "1.0.0"]]
+  :jvm-opts ["-Xmx1G"]
   :profiles {:dev {:dependencies [[midje "1.9.0"]]}})
