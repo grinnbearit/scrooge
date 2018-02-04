@@ -9,17 +9,6 @@
 (def EUR "€")
 (def INR "₹")
 
-(defn allocation
-  [age]
-  (let [risk-share (/ (- 110 age) 100)
-        safe-share (- 1 risk-share)]
-    {"NIFTYBEES" (* 0.2 risk-share)
-     "GOLDBEES" (* 0.2 safe-share)
-     "BONDMEES" (* 0.8 safe-share)
-     "EQTYMEES" (* 0.8 risk-share)
-     EUR 0.0 INR 0.0}))
-
-
 (defn- _net-worth
   [accounts]
   (let [agg (sc/aggregate accounts 0)]
