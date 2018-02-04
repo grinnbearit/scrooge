@@ -94,4 +94,18 @@
 
  (provided
   (sa/rebalance-assets {"$" 100.0 "BTC" 1.0} "prices" "allocation")
-  => {"$" 0.0 "BTC" 2.0}))
+  => {"$" 0.0 "BTC" 2.0})
+
+
+ (asset-delta {"$" 100.0 "BTC" 1.0} "prices" "allocation" "$")
+ => {"$" -100.0 "BTC" 100.0}
+
+ (provided
+  (sa/rebalance-assets {"$" 100.0 "BTC" 1.0} "prices" "allocation")
+  => {"$" 0.0 "BTC" 2.0}
+
+  (sc/convert-amount "prices" "$" "$" -100.0)
+  => -100.0
+
+  (sc/convert-amount "prices" "BTC" "$" 1.0)
+  => 100.0))
