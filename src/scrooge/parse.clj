@@ -1,9 +1,8 @@
 (ns scrooge.parse
   (:require [swissknife.collections :refer [queue]]
-            [clojure.xml :refer [parse]]
-            [clojure.zip :refer [xml-zip]]
-            [clojure.data.zip.xml :refer [xml-> xml1-> text]]
+            [clojure.data.csv :as csv]
             [clojure.string :as str]
+            [clojure.java.io :as io]
             [clj-time.core :as t]))
 
 
@@ -16,46 +15,36 @@
                   (Integer/parseInt day))))
 
 
-(defn extract-posting
+(defn parse-posting
+  [[date-str _ payee account commodity amount _ note]]
+  {:date (parse-date date-str)
+   :payee payee
+   :account (str/split account #":")
+   :note note
+   :commodity commodity
+   :amount (Double/parseDouble amount)})
+
+
+(defn group-postings
   "Extracts a transaction posting from a posting xml node"
-  [node]
-  (let [note (xml1-> node :note text)
-        account (xml1-> node :account :name text)
-        commodity (xml1-> node :post-amount :amount :commodity :symbol text)
-        amount (xml1-> node :post-amount :amount :quantity text)]
-    {:account (str/split account #":")
-     :note note
-     :commodity commodity
-     :amount (Double/parseDouble amount)}))
+  [postings]
+  (letfn [(reducer [acc group]
+            (let [transaction (select-keys (first group) [:date :payee])]
+              (->> (mapv #(dissoc % :date :payee) group)
+                   (assoc transaction :postings)
+                   (conj acc))))]
 
-
-(defn extract-transaction
-  "Extracts a complete transaction from a transaction xml node"
-  [node]
-  (let [date-str (xml1-> node :date text)
-        note (xml1-> node :note text)
-        payee (xml1-> node :payee text)
-        postings (mapv extract-posting
-                       (xml-> node :postings :posting))]
-    {:date (parse-date date-str)
-     :note note
-     :payee payee
-     :postings postings}))
-
-
-(defn extract-ledger
-  "Extracts a vector of transactions from the ledger xml"
-  [ledger-xml]
-  (mapv extract-transaction
-        (xml-> ledger-xml :transactions :transaction)))
+    (->> (partition-by #(select-keys % [:date :payee]) postings)
+         (reduce reducer []))))
 
 
 (defn parse-ledger
-  "Parses a ledger-cli xml file into a vector of transactions"
+  "Parses a ledger-cli csv file into a vector of transactions"
   [input]
-  (->> (parse input)
-       (xml-zip)
-       (extract-ledger)))
+  (with-open [reader (io/reader input)]
+    (->> (csv/read-csv reader)
+         (map parse-posting)
+         (group-postings))))
 
 
 (defn ->dollar-map
