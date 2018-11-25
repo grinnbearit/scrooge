@@ -5,6 +5,6 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/data.csv "0.1.4"]
                  [clj-time "0.14.2"]
-                 [swissknife "1.0.0"]]
+                 [swissknife "1.1.0"]]
   :jvm-opts ["-Xmx1G"]
   :profiles {:dev {:dependencies [[midje "1.9.0"]]}})
