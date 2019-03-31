@@ -1,69 +1,71 @@
 (ns scrooge.parse-test
-  (:require [datetime]
+  (:require [midje.sweet :refer :all]
+            [scrooge.parse :refer :all]
             [clj-time.core :as t]
-            [midje.sweet :refer :all]
-            [scrooge.parse :refer :all]))
+            [clj-time.coerce :as tc]))
 
 
 (facts
- "parse date"
+ "is amount?"
 
- (parse-date "2000/01/01")
- => (t/local-date 2000 1 1))
+ (is-amount? "100")
+ => true
+
+ (is-amount? "100.0")
+ => true
+
+ (is-amount? "-1,000.0")
+ => true
+
+ (is-amount? "1.00.00,00")
+ => true
+
+ (is-amount? "1a")
+ => false)
+
+
+(facts
+ "parse amount"
+
+ (parse-amount "100")
+ => 100.0
+
+ (parse-amount "1,000,000.00")
+ => 1000000.00)
 
 
 (facts
  "parse posting"
 
- (parse-posting
-  ["2000/01/01" "" "payee" "Expenses:Doodads" "$" "100.00" "" "stuff"])
+ (parse-posting `(nil "Expenses:Doodads" "INR 1,000.0" nil "note"))
+ => {:account ["Expenses" "Doodads"]
+     :amount 1000.0
+     :commodity "INR"
+     :price nil
+     :unit nil
+     :note "note"}
 
- => {:date (t/local-date 2000 1 1)
-     :payee "payee"
-     :account ["Expenses" "Doodads"]
-     :note "stuff"
-     :commodity "$"
-     :amount 100.0})
+
+ (parse-posting `(nil "Expenses:Doodads" "10.0 BTC {INR 1,000.0} [2000-01-01]" nil "note"))
+ => {:account ["Expenses" "Doodads"]
+     :amount 10.0
+     :commodity "BTC"
+     :price 1000.0
+     :unit "INR"
+     :note "note"})
 
 
 (facts
- "group postings"
+ "parse transaction"
 
- (group-postings [{:date (t/local-date 2000 1 1)
-                   :payee "a"
-                   :note "a-note-1"}
-                  {:date (t/local-date 2000 1 1)
-                   :payee "a"
-                   :note "a-note-2"}
-                  {:date (t/local-date 2000 1 1)
-                   :payee "b"
-                   :note "b-note-1"}
-                  {:date (t/local-date 2000 1 1)
-                   :payee "a"
-                   :note "a-note-3"}
-                  {:date (t/local-date 2000 1 2)
-                   :payee "a"
-                   :note "a-note-4"}
-                  {:date (t/local-date 2000 1 2)
-                   :payee "b"
-                   :note "b-note-2"}])
+ (parse-transaction '(nil nil (14445 16772 0) nil "payee" "posting-1" "posting-2"))
+ => {:date (t/local-date 2000 1 1)
+     :payee "payee"
+     :postings ["parsed-posting-1" "parsed-posting-2"]}
 
- => [{:date (t/local-date 2000 1 1)
-      :payee "a"
-      :postings [{:note "a-note-1"}
-                 {:note "a-note-2"}]}
-     {:date (t/local-date 2000 1 1)
-      :payee "b"
-      :postings [{:note "b-note-1"}]}
-     {:date (t/local-date 2000 1 1)
-      :payee "a"
-      :postings [{:note "a-note-3"}]}
-     {:date (t/local-date 2000 1 2)
-      :payee "a"
-      :postings [{:note "a-note-4"}]}
-     {:date (t/local-date 2000 1 2)
-      :payee "b"
-      :postings [{:note "b-note-2"}]}])
+ (provided
+  (parse-posting "posting-1") => "parsed-posting-1"
+  (parse-posting "posting-2") => "parsed-posting-2"))
 
 
 (facts

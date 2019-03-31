@@ -9,6 +9,5 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
-ledger.xml
-ledger.csv
 prices.dat
+ledger.edn

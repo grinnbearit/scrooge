@@ -1,50 +1,79 @@
 (ns scrooge.parse
   (:require [swissknife.collections :refer [queue]]
-            [clojure.data.csv :as csv]
             [clojure.string :as str]
             [clojure.java.io :as io]
-            [clj-time.core :as t]))
+            [clj-time.core :as t]
+            [clj-time.coerce :as tc]
+            [clojure.edn :as edn]))
 
 
-(defn parse-date
-  "returnes a joda localdate since time isn't relevant"
-  [date-str]
-  (let [[year month day] (str/split date-str #"/")]
-    (t/local-date (Integer/parseInt year)
-                  (Integer/parseInt month)
-                  (Integer/parseInt day))))
+(defn is-amount?
+  "Returns true if the string only consists of digits, ',', and '.'"
+  [s]
+  (not (nil? (re-matches #"[-\d,\.]+" s))))
+
+
+(defn parse-amount
+  "Returns the parsed amount as a double"
+  [s]
+  (Double/parseDouble (str/replace s "," "" )))
 
 
 (defn parse-posting
-  [[date-str _ payee account commodity amount _ note]]
-  {:date (parse-date date-str)
-   :payee payee
-   :account (str/split account #":")
-   :note note
-   :commodity commodity
-   :amount (Double/parseDouble amount)})
+  [posting]
+  (let [[_ account-str amount-str _ note]
+        posting
+
+        account
+        (str/split account-str #":")
+
+        [_ amt-1 amt-2 _ price-1 price-2]
+        (re-matches #"([^\s]+) ([^\s]+)( \{([^\s]+) ([^\s]+)\}.+)?" amount-str)
+
+        [amount commodity]
+        (if (is-amount? amt-1)
+          [(parse-amount amt-1) amt-2]
+          [(parse-amount amt-2) amt-1])
+
+        [price unit]
+        (cond (nil? price-1)
+              nil
+
+              (is-amount? price-1)
+              [(parse-amount price-1) price-2]
+
+              :else
+              [(parse-amount price-2) price-1])]
+
+    {:account account
+     :amount amount                     ; the amount moved from or into the account
+     :commodity commodity               ; the commodity moved
+     :price price                       ; the price of the commodity (or nil)
+     :unit unit                         ; the unit the price is in
+     :note note}))
 
 
-(defn group-postings
-  "Extracts a transaction posting from a posting xml node"
-  [postings]
-  (letfn [(reducer [acc group]
-            (let [transaction (select-keys (first group) [:date :payee])]
-              (->> (mapv #(dissoc % :date :payee) group)
-                   (assoc transaction :postings)
-                   (conj acc))))]
+(defn parse-transaction
+  [transaction]
+  (let [[_ _ [date_msb date_lsb _] _ payee & postings]
+        transaction
 
-    (->> (partition-by #(select-keys % [:date :payee]) postings)
-         (reduce reducer []))))
+        date
+        (-> (+ (bit-shift-left date_msb 16) date_lsb)
+            (tc/from-epoch)
+            (tc/in-time-zone (t/default-time-zone)))]
+
+    {:date date
+     :payee payee
+     :postings (map parse-posting postings)}))
 
 
 (defn parse-ledger
-  "Parses a ledger-cli csv file into a vector of transactions"
+  "Parses a ledger-cli edn file into a vector of transactions"
   [input]
   (with-open [reader (io/reader input)]
-    (->> (csv/read-csv reader)
-         (map parse-posting)
-         (group-postings))))
+    (->> (edn/read (java.io.PushbackReader. reader))
+         (map parse-transaction))))
 
 
 (defn ->dollar-map
