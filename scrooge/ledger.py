@@ -70,3 +70,17 @@ def net_worth(ledger, prices, commodity):
              .sum())
     return (pd.DataFrame([[commodity, worth]], columns=["commodity", "amount"])
             .set_index("commodity"))
+
+
+def portfolio(ledger, prices):
+    """
+    returns a dataframe of (commodity, share) representing
+    Assets - Liabilities in fractional share of net worth
+    """
+    netcom = net_commodities(ledger)
+    df = (netcom
+          .join(prices)
+          .assign(amount=lambda df: df["amount"]*df["value"])
+          .assign(share=lambda df: df["amount"]/df["amount"].sum())
+          [["share"]])
+    return df
