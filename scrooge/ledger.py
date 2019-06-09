@@ -17,3 +17,20 @@ def ledger_balance(ledger, level=None):
           .sum()
           .reset_index(level=1))
     return df
+
+
+def convert_balance(balance, prices, commodity):
+    """
+    converts amounts into commodity units
+    """
+    divisor = prices.loc[commodity]["value"]
+    df = (balance
+          .set_index("commodity", append=True)
+          .join(prices)
+          .assign(amount=lambda df: df["amount"]*df["value"]/divisor)
+          .groupby("account")
+          [["amount"]]
+          .sum()
+          .assign(commodity=commodity)
+          [["commodity", "amount"]])
+    return df
