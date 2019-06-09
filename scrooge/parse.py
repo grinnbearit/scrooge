@@ -1,4 +1,5 @@
 import re
+import copy
 import pandas as pd
 import edn_format as edn
 from datetime import datetime
@@ -72,8 +73,44 @@ def parse_ledger(filename):
         for (idx, txn) in enumerate(edn.loads(f.read())):
             transaction = parse_transaction(txn)
             for posting in transaction["postings"]:
-                posting["txid"] = idx
-                posting["date"] = transaction["date"]
-                posting["payee"] = transaction["payee"]
-                acc.append(posting)
+                row = copy.deepcopy(posting)
+                row["txid"] = idx
+                row["date"] = transaction["date"]
+                row["payee"] = transaction["payee"]
+                acc.append(row)
     return pd.DataFrame(acc).set_index("txid")
+
+
+def to_dollarmap(pricedb):
+    """
+    given a list of (commodity, unit, price) returns
+    a dict of (commodity, dollar_value)
+    """
+    acc = {"$": 1.0}
+    queue = copy.deepcopy(pricedb)
+    while queue:
+        (commodity, unit, price) = queue.pop(0)
+        if commodity in acc and unit in acc:
+            continue
+        elif commodity in acc:
+            acc[unit] = acc[commodity]/price
+        elif unit in acc:
+            acc[commodity] = acc[unit] * price
+        else:
+            acc.append((commodity, unit, price))
+    return acc
+
+
+def parse_pricedb(filename):
+    """
+    returns a price dataframe of commodity->dollar value
+    """
+    acc = []
+    with open(filename) as f:
+        for line in f.readlines():
+            (commodity, unit, price) = line.split(" ")[3:]
+            acc.append((commodity, unit, float(price)))
+
+    dollarmap = to_dollarmap(acc)
+    return (pd.DataFrame(dollarmap.items(), columns=["commodity", "value"])
+            .set_index("commodity"))
