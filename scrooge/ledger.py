@@ -1,4 +1,6 @@
 import pandas as pd
+import scrooge.frame as sf
+from datetime import date, timedelta
 
 
 def ledger_balance(ledger, level=None):
@@ -6,15 +8,8 @@ def ledger_balance(ledger, level=None):
     returns the balance per commodity per account
     if level is passed, aggregates at `level`
     """
-    def subaccount(account):
-        if level is None:
-            return account
-        else:
-            splits = account.split(":")[:level]
-            return ":".join(splits)
-
-    df = (ledger
-          .assign(account=lambda df: df["account"].apply(subaccount))
+    leveled = ledger if level is None else sf.subaccount(ledger, level)
+    df = (leveled
           .groupby(["account", "commodity"])
           [["amount"]]
           .sum()
@@ -84,3 +79,59 @@ def portfolio(ledger, prices):
           .assign(share=lambda df: df["amount"]/df["amount"].sum())
           [["share"]])
     return df
+
+
+def daily_statement(ledger, level=None):
+    """
+    returns (date, account, commodity)
+    if level is passed, aggregates at `level`
+    """
+    leveled = ledger if level is None else sf.subaccount(ledger, level)
+    df = (leveled
+          .groupby(["date", "account", "commodity"])
+          [["amount"]]
+          .sum()
+          .reset_index(level=[1, 2]))
+    return df
+
+
+def weekly_statement(ledger, level=None):
+    """
+    returns (date, account, commodity) where date is set
+    to the Monday of that week for all dates.
+    if level is passed, aggregates at `level`
+    """
+    def reset_date(d):
+        return d - timedelta(days=d.weekday())
+
+    df = (ledger
+          .assign(date=lambda df: df["date"].apply(reset_date)))
+    return daily_statement(df, level)
+
+
+def monthly_statement(ledger, level=None):
+    """
+    returns (date, account, commodity) where date is set
+    to the first date of the month for all dates.
+    if level is passed, aggregates at `level`
+    """
+    def reset_date(d):
+        return date(d.year, d.month, 1)
+
+    df = (ledger
+          .assign(date=lambda df: df["date"].apply(reset_date)))
+    return daily_statement(df, level)
+
+
+def annual_statement(ledger, level=None):
+    """
+    returns (date, account, commodity) where date is set
+    to the first date of the year for all dates.
+    if level is passed, aggregates at `level`
+    """
+    def reset_date(d):
+        return date(d.year, 1, 1)
+
+    df = (ledger
+          .assign(date=lambda df: df["date"].apply(reset_date)))
+    return daily_statement(df, level)
