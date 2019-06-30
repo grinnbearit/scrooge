@@ -3,6 +3,7 @@ import copy
 import pandas as pd
 import edn_format as edn
 from datetime import datetime
+from scrooge.constants import EUR, INR
 
 
 AMOUNT_RE = r"[-\d,\.]+"
@@ -114,3 +115,74 @@ def parse_pricedb(filename):
     dollarmap = to_dollarmap(acc)
     return (pd.DataFrame(dollarmap.items(), columns=["commodity", "value"])
             .set_index("commodity"))
+
+
+
+def parse_historical(filename):
+    """
+    returns a dataframe of (date, price) with linearly
+    interpolated prices for missing dates.
+
+    historical tsv format from investing.com
+    """
+    df = (pd.read_csv(filename, sep="\t", parse_dates=[0],
+                      usecols=["date", "price"], header=0,
+                      names=["date", "price"], thousands=",")
+          .set_index("date")
+          .resample("1D")
+          .interpolate())
+    return df
+
+
+def parse_commodity(filename, commodity, unit):
+    """
+    returns a dataframe of (date, commodity, unit, price)
+    uses `parse_historical`
+    """
+    df = (parse_historical(filename)
+          .assign(commodity=commodity,
+                  unit=unit)
+          [["commodity", "unit", "price"]])
+    return df
+
+
+def parse_historical_prices():
+    """
+    returns a dataframe of (date, commodity, price) where prices
+    are in USD on that date
+    """
+    df = pd.concat([parse_commodity("historical/eur_usd.tsv", EUR, "$"),
+                    parse_commodity("historical/btc_usd.tsv", "BTC", "$"),
+                    parse_commodity("historical/usd_inr.tsv", "$", INR)])
+
+    acc = []
+    for idx in df.index:
+        row = df.loc[idx].values
+        dm = to_dollarmap(list(row))
+        acc.extend([(idx, c, v) for (c, v) in dm.items()])
+
+    return (pd.DataFrame(acc, columns=["date", "commodity", "value"])
+            .set_index(["date", "commodity"]))
+
+
+def parse_yield(filename, commodity):
+    """
+    returns a dataframe of (date, commodity, yield)
+    uses `parse_historical`
+    """
+    df = (parse_historical(filename)
+          .assign(commodity=commodity)
+          .rename(columns={"price": "yield"})
+          [["commodity", "yield"]])
+    return df
+
+
+def parse_historical_yield():
+    """
+    returns a dataframe of (date, commodity, yield) where yield
+    is the annualised return on that date
+    """
+    df = pd.concat([parse_yield("historical/eur_3my.tsv", EUR),
+                    parse_yield("historical/usd_3my.tsv", "$"),
+                    parse_yield("historical/inr_3my.tsv", INR)])
+    return df
