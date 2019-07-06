@@ -98,7 +98,7 @@ def to_dollarmap(pricedb):
         elif unit in acc:
             acc[commodity] = acc[unit] * price
         else:
-            acc.append((commodity, unit, price))
+            queue.append((commodity, unit, price))
     return acc
 
 
@@ -157,7 +157,7 @@ def parse_historical_prices():
 
     acc = []
     for idx in df.index:
-        row = df.loc[idx].values
+        row = df.loc[idx].values.reshape(-1, 3)
         dm = to_dollarmap(list(row))
         acc.extend([(idx, c, v) for (c, v) in dm.items()])
 
