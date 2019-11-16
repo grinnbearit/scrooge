@@ -2,7 +2,8 @@
   (:require [midje.sweet :refer :all]
             [scrooge.parse :refer :all]
             [clj-time.core :as t]
-            [clj-time.coerce :as tc]))
+            [clj-time.coerce :as tc]
+            [scrooge.data-readers]))
 
 
 (facts
@@ -69,6 +70,17 @@
 
 
 (facts
+ "parse ledger"
+
+ (parse-ledger (java.io.StringReader. "(\"transaction-1\" \"transaction-2\")"))
+ => ["parsed-transaction-1" "parsed-transaction-2"]
+
+ (provided
+  (parse-transaction "transaction-1") => "parsed-transaction-1"
+  (parse-transaction "transaction-2") => "parsed-transaction-2"))
+
+
+(facts
  "dollar map"
 
  (->dollar-map
@@ -89,3 +101,11 @@
        "P 2016/09/17 09:28:56 € $ 1.115800"))
  => [["₹" "$" 0.014900]
      ["€" "$" 1.115800]])
+
+
+(facts
+ "parse pricedb"
+
+ (parse-pricedb (java.io.StringReader. (str "P 2016/09/17 09:28:53 ₹ $ 0.014900\n"
+                                            "P 2016/09/17 09:28:56 € $ 1.115800")))
+ => {"$" 1.0 "€" 1.1158 "₹" 0.0149})

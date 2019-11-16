@@ -1,7 +1,8 @@
 (ns scrooge.core-test
   (:require [midje.sweet :refer :all]
             [scrooge.core :refer :all]
-            [clj-time.core :as t]))
+            [clj-time.core :as t]
+            [scrooge.data-readers]))
 
 
 (facts
@@ -17,7 +18,7 @@
    (convert-amount prices "BTC" "INR" 2.0)
    => 75000.0))
 
-;;; postings
+;;; transactions
 
 (facts
  "between"
@@ -133,6 +134,15 @@
 
 
 (facts
+ "convert balance"
+
+ (#'scrooge.core/convert-balance {"$" 10.0 "BTC" 1.0}
+                                 {"$" 1.0 "BTC" 750.0}
+                                 "$")
+ => {"$" 760.0})
+
+
+(facts
  "convert accounts"
 
  (convert-accounts {["Assets"] {"$" 10.0 "BTC" 1.0}
@@ -198,21 +208,32 @@
 
 
 (facts
+ "subaccount?"
+
+ (subaccount? ["Expenses" "Eating Out" "Restaurants"] ["Expenses" "Eating Out" "Restaurants" "Chinese"])
+ => false
+
+ (subaccount? ["Expenses" "Eating Out" "Restaurants"] ["Expenses" "Eating Out" "Restaurants"])
+ => true
+
+ (subaccount? ["Expenses" "Eating Out" "Restaurants"] ["Eating Out" "Restaurants"])
+ => true
+
+ (subaccount? ["Expenses" "Eating Out" "Restaurants"] [])
+ => true)
+
+
+(facts
  "subaccounts"
 
- (subaccounts {["Assets" "Wallet"] {"$" 10.0}
-               ["Expenses" "Restaurants"] {"$" 5.0}}
-              "assets")
- => {["Assets" "Wallet"] {"$" 10.0}}
+ (let [accounts {["Expenses" "Eating Out" "Restaurants"] {"$" 10.0}
+                 ["Expenses" "Eating Out" "Snacks"] {"$" 10.0}
+                 ["Assets" "Wallet"] {"$" -20.0}}]
 
+   (subaccounts accounts [["Eating Out"]])
+   => {["Expenses" "Eating Out" "Restaurants"] {"$" 10.0}
+       ["Expenses" "Eating Out" "Snacks"] {"$" 10.0}}
 
- (subaccounts {["Assets" "Wallet"] {"$" 10.0}
-               ["Expenses" "Restaurants"] {"$" 5.0}}
-              #"set")
- => {}
-
-
- (subaccounts {["Assets" "Wallet"] {"$" 10.0}
-               ["Expenses" "Restaurants"] {"$" 5.0}}
-              #"W.+t")
- => {["Assets" "Wallet"] {"$" 10.0}})
+   (subaccounts accounts [["Restaurants"] ["Snacks"]])
+   => {["Expenses" "Eating Out" "Restaurants"] {"$" 10.0}
+       ["Expenses" "Eating Out" "Snacks"] {"$" 10.0}}))

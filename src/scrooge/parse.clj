@@ -4,7 +4,7 @@
             [clojure.java.io :as io]
             [clj-time.core :as t]
             [clj-time.coerce :as tc]
-            [clojure.edn :as edn]))
+            [scrooge.data-readers]))
 
 
 (defn is-amount?
@@ -72,7 +72,7 @@
   "Parses a ledger-cli edn file into a vector of transactions"
   [input]
   (with-open [reader (io/reader input)]
-    (->> (edn/read (java.io.PushbackReader. reader))
+    (->> (read (java.io.PushbackReader. reader))
          (map parse-transaction))))
 
 

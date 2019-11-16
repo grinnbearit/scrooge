@@ -11,7 +11,7 @@
   (/ (* amount (prices from))
      (prices to)))
 
-;;; postings
+;;; transactions
 
 (defn between
   "Filters ledger entries to those that are
@@ -26,12 +26,12 @@
 
 
 (defmulti match
-  "Returns all postings that satisfy matcher
+  "Returns all transactions that satisfy `pattern`
 
-  if pattern is a string, returns all postings that have
+  if pattern is a string, returns all transactions that have
   a component that contains it as a case insensitive substring
 
-  if pattern is a regex, returns all postings that satisfy it"
+  if pattern is a regex, returns all transactions that satisfy it"
   (fn [ledger pattern & sections]
     (type pattern)))
 
@@ -92,13 +92,20 @@
 
 ;;; accounts
 
+(defn- convert-balance
+  "Converts a balance map to the same commodity"
+  [balance prices to]
+  {to (->> (for [[commodity amount] balance]
+             (convert-amount prices commodity to amount))
+           (apply +))})
+
+
 (defn convert-accounts
   "Convert all account balances to the same commodity"
   [accounts prices to]
-  (->> (for [[account bal] accounts
-             [commodity amount] bal]
-         {account {to (convert-amount prices commodity to amount)}})
-       (reduce (partial merge-with (partial merge-with +)))))
+  (->> (for [[account balance] accounts]
+         [account (convert-balance balance prices to)])
+       (into {})))
 
 
 (defn aggregate
@@ -141,30 +148,17 @@
        (merge-with (partial merge-with +) accounts-1)))
 
 
-(defmulti subaccounts
-  "Returns all accounts that satisfy matcher
-
-  if pattern is a string, returns all accounts that have
-  a component that contains it as a case insensitive substring
-
-  if pattern is a regex, returns all accounts that have
-  acomponent that satisfy it"
-  (fn [accounts pattern]
-    (type pattern)))
+(defn subaccount?
+  "Returns True if account contains matcher as a subcomponent"
+  [account matcher]
+  (and (<= (count matcher) (count account))
+       (some #(= matcher %) (partition (count matcher) 1 account))))
 
 
-(defmethod subaccounts java.lang.String
-  [accounts pattern]
-  (let [ptrn (str/lower-case pattern)]
-    (->> (for [[account bal :as entry] accounts
-               :when (some #(str/includes? (str/lower-case %) ptrn) account)]
-           entry)
-         (into {}))))
-
-
-(defmethod subaccounts java.util.regex.Pattern
-  [accounts pattern]
-  (->> (for [[account bal :as entry] accounts
-               :when (some #(re-matches pattern %) account)]
-           entry)
+(defn subaccounts
+  "Returns a subset of accounts that satisfy at least one `matcher`"
+  [accounts matchers]
+  (->> (for [[account :as entry] accounts
+             :when (some (partial subaccount? account) matchers)]
+         entry)
        (into {})))
