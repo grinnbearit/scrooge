@@ -124,10 +124,12 @@
  (balance [{:postings [{:account ["Expenses"] :commodity "$" :amount 10.0}
                        {:account ["Wallet"], :commodity "$", :amount -10.0}]}
            {:postings [{:account ["Expenses"] :commodity "BTC" :amount 1.0}
-                       {:account ["Wallet"], :commodity "BTC", :amount -1.0}]}])
- => {["Expenses"] {"$" 10.0
+                       {:account ["Wallet"], :commodity "BTC", :amount -1.0}
+                       {:account ["Expenses"] :commodity "$" :amount 1.0}
+                       {:account ["Wallet"], :commodity "$", :amount -1.0}]}])
+ => {["Expenses"] {"$" 11.0
                    "BTC" 1.0}
-     ["Wallet"] {"$" -10.0
+     ["Wallet"] {"$" -11.0
                  "BTC" -1.0}})
 
 

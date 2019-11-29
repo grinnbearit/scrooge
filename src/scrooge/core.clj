@@ -87,8 +87,8 @@
   [ledger]
   (->> (for [transaction ledger
              {:keys [account commodity amount]} (:postings transaction)]
-         {account {commodity amount}})
-       (reduce (partial merge-with (partial merge-with +)))))
+         [[account commodity] amount])
+       (reduce #(update-in %1 (%2 0) (fnil + 0) (%2 1)) {})))
 
 
 (defn- aggregate-daily-postings
