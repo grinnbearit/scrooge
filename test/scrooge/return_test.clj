@@ -6,9 +6,9 @@
 
 
 (facts
- "aggregate daily postings"
+ "ledger -> daily postings"
 
- (#'scrooge.return/aggregate-daily-postings
+ (ledger->daily-postings
   [{:date (t/local-date 2000 1 1)
     :postings [{:account ["Exchange"] :commodity "BTC" :amount 1.0 :price 1000 :unit "$"}
                {:account ["Wallet"] :commodity "$" :amount -1000 :price nil :unit nil}]}
@@ -38,40 +38,87 @@
 
 
 (facts
- "combine daily postings"
+ "aggregate daily postings"
 
- (#'scrooge.return/combine-daily-postings
-  [{:date (t/local-date 2000 1 1)
-    :postings {["Exchange"] {"BTC" {nil [{:amount 1.0 :price nil}]
-                                    "$" [{:amount 1.0 :price 1000}]
-                                    "€" [{:amount 0.5 :price 910}
-                                         {:amount 0.5 :price 900}]}}
-               ["Wallet"] {"$" {nil [{:amount -1000 :price nil}]}
-                           "BTC" {nil [{:amount -1.0 :price nil}]}
-                           "€" {nil [{:amount -905 :price nil}]}}}}
+ (let [daily-postings [{:date (t/local-date 2000 1 1)
+                        :postings {["Assets" "Exchange"] {"BTC" {nil [{:amount 1.0 :price nil}]
+                                                                 "$" [{:amount 1.0 :price 1000}]
+                                                                 "€" [{:amount 0.5 :price 910}
+                                                                      {:amount 0.5 :price 900}]}}
+                                   ["Assets" "Wallet"] {"$" {nil [{:amount -1000 :price nil}]}
+                                                        "BTC" {nil [{:amount -1.0 :price nil}]}
+                                                        "€" {nil [{:amount -905 :price nil}]}}}}
 
-   {:date (t/local-date 2000 1 2)
-    :postings {["Exchange"] {"BTC" {"$" [{:amount 1.0 :price 1100}]}}
-               ["Wallet"] {"$" {nil [{:amount -1100 :price nil}]}}}}])
+                       {:date (t/local-date 2000 1 2)
+                        :postings {["Assets" "Exchange"] {"BTC" {"$" [{:amount 1.0 :price 1100}]}}
+                                   ["Assets" "Wallet"] {"$" {nil [{:amount -1100 :price nil}]}}}}]]
 
- => [{:date (t/local-date 2000 1 1)
-      :balance {["Exchange"] {"BTC" {nil {:amount 1.0 :price nil}
-                                     "$" {:amount 1.0 :price 1000.0}
-                                     "€" {:amount 1.0 :price 905.0}}}
-                ["Wallet"] {"$" {nil {:amount -1000 :price nil}}
-                            "BTC" {nil {:amount -1.0 :price nil}}
-                            "€" {nil {:amount -905 :price nil}}}}}
-     {:date (t/local-date 2000 1 2)
-      :balance {["Exchange"] {"BTC" {"$" {:amount 1.0 :price 1100.0}}}
-                ["Wallet"] {"$" {nil {:amount -1100 :price nil}}}}}])
+   (aggregate-daily-postings daily-postings 0)
+   => [{:date (t/local-date 2000 1 1)
+        :postings {["Assets"] {"$" {nil [{:amount -1000 :price nil}]}
+                               "BTC" {nil [{:amount 1.0 :price nil}
+                                           {:amount -1.0 :price nil}]
+                                      "$" [{:amount 1.0 :price 1000}]
+                                      "€" [{:amount 0.5 :price 910}
+                                           {:amount 0.5 :price 900}]}
+                               "€" {nil [{:amount -905 :price nil}]}}}}
+       {:date (t/local-date 2000 1 2)
+        :postings {["Assets"] {"$" {nil [{:amount -1100 :price nil}]}
+                               "BTC" {"$" [{:amount 1.0 :price 1100}]}}}}]
+
+
+   (aggregate-daily-postings daily-postings 1)
+   => daily-postings
+
+
+   (aggregate-daily-postings daily-postings 2)
+   => daily-postings))
 
 
 (facts
- "daily balance"
+ "daily subaccounts"
 
- (daily-balance "ledger")
- => "daily-balance"
+ (daily-subaccounts [{:date (t/local-date 2000 1 1)
+                      :postings {["Assets" "Wallet"] {"$" {nil [{:amount -1000 :price nil}
+                                                                {:amount -100 :price nil}]}}
+                                 ["Assets" "Bank"] {"$" {nil [{:amount 1000 :price nil}]}}
+                                 ["Expenses" "Groceries"] {"$" {nil [{:amount 100 :price nil}]}}}}
+                     {:date (t/local-date 2000 1 2)
+                      :postings {["Assets" "Wallet"] {"$" {nil [{:amount -200 :price nil}]}}
+                                 ["Liabilities" "Bills"] {"$" {nil [{:amount 200 :price nil}]}}}}]
+                    [["Assets"] ["Liabilities"]])
 
- (provided
-  (#'scrooge.return/aggregate-daily-postings "ledger") => "daily-postings"
-  (#'scrooge.return/combine-daily-postings "daily-postings") => "daily-balance"))
+ => [{:date (t/local-date 2000 1 1)
+      :postings {["Assets" "Bank"] {"$" {nil [{:amount 1000 :price nil}]}}
+                 ["Assets" "Wallet"] {"$" {nil [{:amount -1000 :price nil}
+                                                {:amount -100 :price nil}]}}}}
+     {:date (t/local-date 2000 1 2)
+      :postings {["Assets" "Wallet"] {"$" {nil [{:amount -200 :price nil}]}}
+                 ["Liabilities" "Bills"] {"$" {nil [{:amount 200 :price nil}]}}}}])
+
+
+(facts
+ "daily-postings -> daily-balance"
+
+ (daily-postings->daily-balance
+  [{:date (t/local-date 2000 1 1)
+    :postings {["Assets"] {"$" {nil [{:amount -1000 :price nil}]}
+                           "BTC" {nil [{:amount 1.0 :price nil}
+                                       {:amount -1.0 :price nil}]
+                                  "$" [{:amount 1.0 :price 1000}
+                                       {:amount -0.6 :price 1200}]
+                                  "€" [{:amount 0.5 :price 910}
+                                       {:amount 0.5 :price 900}]}
+                           "€" {nil [{:amount -905 :price nil}]}}}}
+   {:date (t/local-date 2000 1 2)
+    :postings {["Assets"] {"$" {nil [{:amount -1100 :price nil}]}
+                           "BTC" {"$" [{:amount 1.0 :price 1100}]}}}}])
+
+ => [{:date (t/local-date 2000 1 1)
+      :balance {["Assets"] {"$" {nil {:amount -1000 :price nil}}
+                            "BTC" {"$" {:amount 0.4 :price 1075.0}
+                                   "€" {:amount 1.0 :price 905.0}}
+                            "€" {nil {:amount -905 :price nil}}}}}
+     {:date (t/local-date 2000 1 2)
+      :balance {["Assets"] {"$" {nil {:amount -1100 :price nil}}
+                            "BTC" {"$" {:amount 1.0 :price 1100.0}}}}}])

@@ -3,6 +3,7 @@
             [scrooge.core :as sc]
             [scrooge.parse :as sp]
             [scrooge.assets :as sa]
+            [scrooge.return :as sr]
             [clojure.set :as set]))
 
 
@@ -65,3 +66,11 @@
    (->> (for [[comm units] (asset-delta assets prices allocation)]
           [comm (sc/convert-amount prices comm commodity units)])
         (into {}))))
+
+
+(defn daily-net-worth
+  "Returns the number of Assets - Liabilities added or subtracted daily"
+  [ledger]
+  (-> (sr/ledger->daily-postings ledger)
+      (sr/daily-subaccounts [["Assets"] ["Liabilities"]])
+      (sr/daily-postings->daily-net)))
