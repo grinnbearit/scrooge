@@ -17,31 +17,35 @@
 
 
 (facts
- "total value"
+ "convert assets"
 
- (let [prices {"$" 1.0
-               "BTC" 100.0}]
+ (let [prices {"$" 1.0 "BTC" 500.0 "S&P" 100.0 "NIFTY" 10.0}]
 
-   (total-value {"$" -25.0
-                 "BTC" 1.0}
-                prices
-                "$")
-   => 75.0
-
-   (provided
-    (convert-amount prices "$" "$" -25.0) => -25.0
-    (convert-amount prices "BTC" "$" 1.0) => 100.0)))
+   (convert-assets {"BTC" 10.0 "S&P" 100.0 "NIFTY" 10.0}
+                   prices
+                   "$")
+   => {"BTC" 5000.0
+       "S&P" 10000.0
+       "NIFTY" 100.0}))
 
 
 (facts
  "rebalance assets"
 
- (let [prices {"$" 1.0 "BTC" 100.0}]
+ (rebalance-assets {"BTC" 10.0 "S&P" 10.0 "NIFTY" 100.0}
+                   {"$" 1.0 "BTC" 500.0 "S&P" 100.0 "NIFTY" 10.0}
+                   {"BTC" 0.5 "S&P" 0.5}
+                   {"$" 1000.0})
+ => {"BTC" -2.0
+     "S&P" 30.0
+     "NIFTY" -100.0
+     "$" -1000.0}
 
-   (rebalance-assets {"$" 1000.0 "INR" 100.0} prices {"$" 0.5 "BTC" 0.5})
-   => {"$" 500.0 "BTC" 5.0}
-
-   (provided
-    (total-value {"$" 1000.0 "BTC" 0.0} prices "$") => 1000.0
-    (convert-amount prices "$" "$" 500.0) => 500.0
-    (convert-amount prices "$" "BTC" 500.0) => 5.0)))
+ (rebalance-assets {"BTC" 10.0 "S&P" 10.0 "NIFTY" 100.0 "$" 500}
+                   {"$" 1.0 "BTC" 500.0 "S&P" 100.0 "NIFTY" 10.0}
+                   {"BTC" 0.5 "S&P" 0.5}
+                   {"$" 500.0})
+ => {"BTC" -2.0
+     "S&P" 30.0
+     "NIFTY" -100.0
+     "$" -1000.0})

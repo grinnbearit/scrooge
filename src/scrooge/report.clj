@@ -55,15 +55,13 @@
 
 (defn asset-delta
   "Returns the number of units of each asset that need to be bought
-  to rebalance the portfolio
+  and sold to rebalance the portfolio
 
-  if commodity is passed, returns the amount to be transferred in
-  that commodity"
-  ([assets prices allocation]
-   (let [rebalanced (sa/rebalance-assets assets prices allocation)]
-     (merge-with - rebalanced assets)))
-  ([assets prices allocation commodity]
-   (->> (for [[comm units] (asset-delta assets prices allocation)]
+  if commodity is passed, returns the amounts in that commodity"
+  ([assets prices allocation investment]
+   (sa/rebalance-assets assets prices allocation investment))
+  ([assets prices allocation investment commodity]
+   (->> (for [[comm units] (sa/rebalance-assets assets prices allocation investment)]
           [comm (sc/convert-amount prices comm commodity units)])
         (into {}))))
 

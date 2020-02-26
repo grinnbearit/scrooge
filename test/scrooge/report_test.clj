@@ -60,7 +60,7 @@
   => {:net-worth {"BTC" 1.0}})
 
 
-  ;; with exclude
+ ;; with exclude
  (portfolio "ledger" "prices" :exclude #{"$"})
  => {"BTC" 1.00}
 
@@ -89,20 +89,20 @@
 (facts
  "asset delta"
 
- (asset-delta {"$" 100.0 "BTC" 1.0} "prices" "allocation")
+ (asset-delta {"BTC" 1.0} "prices" "allocation" {"$" 100})
  => {"$" -100.0 "BTC" 1.0}
 
  (provided
-  (sa/rebalance-assets {"$" 100.0 "BTC" 1.0} "prices" "allocation")
-  => {"$" 0.0 "BTC" 2.0})
+  (sa/rebalance-assets {"BTC" 1.0} "prices" "allocation" {"$" 100})
+  => {"$" -100.0 "BTC" 1.0})
 
 
- (asset-delta {"$" 100.0 "BTC" 1.0} "prices" "allocation" "$")
+ (asset-delta {"BTC" 1.0} "prices" "allocation" {"$" 100} "$")
  => {"$" -100.0 "BTC" 100.0}
 
  (provided
-  (sa/rebalance-assets {"$" 100.0 "BTC" 1.0} "prices" "allocation")
-  => {"$" 0.0 "BTC" 2.0}
+  (sa/rebalance-assets {"BTC" 1.0} "prices" "allocation" {"$" 100})
+  => {"$" -100.0 "BTC" 1.0}
 
   (sc/convert-amount "prices" "$" "$" -100.0)
   => -100.0
