@@ -58,10 +58,10 @@
   and sold to rebalance the portfolio
 
   if commodity is passed, returns the amounts in that commodity"
-  ([assets prices allocation investment]
-   (sa/rebalance-assets assets prices allocation investment))
-  ([assets prices allocation investment commodity]
-   (->> (for [[comm units] (sa/rebalance-assets assets prices allocation investment)]
+  ([assets prices allocation investment sell?]
+   (sa/rebalance-assets assets prices allocation investment sell?))
+  ([assets prices allocation investment sell? commodity]
+   (->> (for [[comm units] (sa/rebalance-assets assets prices allocation investment sell?)]
           [comm (sc/convert-amount prices comm commodity units)])
         (into {}))))
 
